@@ -7,14 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class MainController {
@@ -27,47 +26,37 @@ public class MainController {
     }
 
     @GetMapping("/main")
-    public String main(@ModelAttribute("message") Message message,
+    public String main(@RequestParam(required = false, defaultValue = "") String filter,
                        Model model) {
-        final Iterable<Message> all = messageRepository.findAll();
-        model.addAttribute("messages", all);
+        Iterable<Message> messages = messageRepository.findAll();
+        if (filter != null && !filter.isEmpty()) {
+            messages = messageRepository.findByTag(filter);
+        } else {
+            messages = messageRepository.findAll();
+        }
+        model.addAttribute("messages", messages);
+        model.addAttribute("filter", filter);
         return "main";
     }
 
-    @GetMapping()
-    public String greeting(@RequestParam(name = "name", required = false,
-            defaultValue = "World") String name, Model model) {
-        model.addAttribute("name", name);
+    @GetMapping("/")
+    public String greeting(Map<String, Object> model) {
         return "greeting";
     }
 
     @PostMapping("/main")
     public String add(@AuthenticationPrincipal User user,
-                      @ModelAttribute("message") @Valid Message message,
-                      BindingResult bindingResult,
-                      Model model) {
-        if (bindingResult.hasErrors()) {
-            return "main";
-        }
-        message.setAuthor(user);
+                      @RequestParam String text,
+                      @RequestParam String tag,
+                      Map<String, Object> model) {
+        Message message = new Message(text, tag, user);
+
         messageRepository.save(message);
-        final Iterable<Message> messages = messageRepository.findAll();
-        model.addAttribute("messages", messages);
+
+        Iterable<Message> messages = messageRepository.findAll();
+
+        model.put("messages", messages);
+
         return "main";
     }
-
-    @PostMapping("main/filter")
-    public String filter(@RequestParam String filter,
-                         @ModelAttribute("message") Message message,
-                         Model model) {
-        if (filter.isEmpty()) {
-            final List<Message> messages = (List<Message>) messageRepository.findAll();
-            model.addAttribute("messages", messages);
-        } else {
-            final List<Message> messages = messageRepository.findByTag(filter);
-            model.addAttribute("messages", messages);
-        }
-        return "main";
-    }
-
 }

@@ -5,12 +5,11 @@ import com.springcourse.jwd.hardziyevich.app.domain.User;
 import com.springcourse.jwd.hardziyevich.app.repos.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.Collections;
+import java.util.Map;
 
 @Controller
 public class RegistrationController {
@@ -28,14 +27,13 @@ public class RegistrationController {
     }
 
     @PostMapping("/registration")
-    public String addUser(@ModelAttribute("user") User user,
-                          Model model) {
-        final User userFromDb = userRepo.findByUsername(user.getUsername());
+    public String addUser(User user, Map<String, Object> model) {
+        User userFromDb = userRepo.findByUsername(user.getUsername());
+
         if (userFromDb != null) {
-            model.addAttribute("message", "User exists!");
+            model.put("message", "User exists!");
             return "registration";
         }
-
         user.setActive(true);
         user.setRoles(Collections.singleton(Role.USER));
         userRepo.save(user);
