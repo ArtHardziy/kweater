@@ -1,8 +1,10 @@
 package com.springcourse.jwd.hardziyevich.app.controller;
 
 import com.springcourse.jwd.hardziyevich.app.domain.Message;
+import com.springcourse.jwd.hardziyevich.app.domain.User;
 import com.springcourse.jwd.hardziyevich.app.repos.MessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -40,12 +42,14 @@ public class MainController {
     }
 
     @PostMapping("/main")
-    public String add(@ModelAttribute("message") @Valid Message message,
+    public String add(@AuthenticationPrincipal User user,
+                      @ModelAttribute("message") @Valid Message message,
                       BindingResult bindingResult,
                       Model model) {
         if (bindingResult.hasErrors()) {
             return "main";
         }
+        message.setAuthor(user);
         messageRepository.save(message);
         final Iterable<Message> messages = messageRepository.findAll();
         model.addAttribute("messages", messages);
@@ -56,7 +60,7 @@ public class MainController {
     public String filter(@RequestParam String filter,
                          @ModelAttribute("message") Message message,
                          Model model) {
-        if(filter.isEmpty()){
+        if (filter.isEmpty()) {
             final List<Message> messages = (List<Message>) messageRepository.findAll();
             model.addAttribute("messages", messages);
         } else {
